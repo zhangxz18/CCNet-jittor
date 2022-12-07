@@ -1,0 +1,6 @@
+numpy
+scipy
+opencv-python
+tqdm
+tensorboardx
+jittor

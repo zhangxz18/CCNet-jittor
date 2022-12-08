@@ -8,6 +8,8 @@ import jittor as jt
 from utils.logger import get_logger
 from utils.pyt_utils import extant_file
 
+from dataset.datasets import CSDataSet
+
 jt.flags.use_cuda = 1
 
 logger = get_logger()
@@ -60,25 +62,23 @@ class Engine(object):
         is_shuffle = True
         batch_size = self.args.batch_size
 
-        train_loader = jt.dataset.Dataset(train_dataset).set_attrs(
-                                       batch_size=batch_size,
-                                       num_workers=self.args.num_workers,
-                                       drop_last=False,
-                                       shuffle=is_shuffle)
-                                       #pin_memory=True)
-
+        train_dataset.set_attrs(batch_size=batch_size,
+                                num_workers=self.args.num_workers,
+                                drop_last=False,
+                                shuffle=is_shuffle)
+                                #    pin_memory=True)
+        train_loader = train_dataset
         return train_loader
 
     def get_test_loader(self, test_dataset):
         is_shuffle = False
         batch_size = self.args.batch_size
 
-        test_loader = jt.dataset.Dataset(test_dataset,
-                                       batch_size=batch_size,
-                                       num_workers=self.args.num_workers,
-                                       drop_last=False,
-                                       shuffle=is_shuffle)
-
+        test_dataset.set_attrs(batch_size=batch_size,
+                            num_workers=self.args.num_workers,
+                            drop_last=False,
+                            shuffle=is_shuffle)
+        test_loader = test_dataset              
         return test_loader
 
 

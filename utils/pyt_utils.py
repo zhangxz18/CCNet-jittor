@@ -60,7 +60,7 @@ def load_model(model, model_file, is_restore=False):
             new_state_dict[name] = v
         state_dict = new_state_dict
 
-    model.load_state_dict(state_dict, strict=False)
+    model.load_state_dict(state_dict)
     ckpt_keys = set(state_dict.keys())
     own_keys = set(model.state_dict().keys())
     missing_keys = own_keys - ckpt_keys

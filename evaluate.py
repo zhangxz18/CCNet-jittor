@@ -15,7 +15,7 @@ import scipy.ndimage as nd
 from math import ceil
 from PIL import Image as PILImage
 from utils.pyt_utils import load_model
-
+import networks
 from engine import Engine
 
 jt.flags.use_cuda = 1
@@ -240,7 +240,7 @@ def main():
         dataloader = iter(test_loader)
 
         for idx in pbar:
-            image, label, size, name = dataloader.next()
+            image, label, size, name = next(dataloader)
             size = size[0].numpy()
             with jt.no_grad():
                 output = predict_multiscale(model, image, input_size, [1.0], args.num_classes, False, 0)

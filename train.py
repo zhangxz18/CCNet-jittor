@@ -198,7 +198,7 @@ def main():
             for idx in pbar:
                 global_iteration += 1
 
-                images, labels, _, _ = dataloader.next()
+                images, labels, _, _ = next(dataloader)
                 labels = labels.long()
 
                 optimizer.zero_grad()

@@ -10,6 +10,7 @@ jt.flags.use_cuda = 1
 
 class CSDataSet(Dataset):
     def __init__(self, root, list_path, max_iters=None, crop_size=(321, 321), mean=(128, 128, 128), scale=True, mirror=True, ignore_label=255):
+        super().__init__()
         self.root = root
         self.list_path = list_path
         self.crop_h, self.crop_w = crop_size

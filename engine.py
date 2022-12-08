@@ -60,7 +60,7 @@ class Engine(object):
         is_shuffle = True
         batch_size = self.args.batch_size
 
-        train_loader = jt.dataset.dataset.DataLoader(train_dataset).set_attrs(
+        train_loader = jt.dataset.Dataset(train_dataset).set_attrs(
                                        batch_size=batch_size,
                                        num_workers=self.args.num_workers,
                                        drop_last=False,
@@ -73,7 +73,7 @@ class Engine(object):
         is_shuffle = False
         batch_size = self.args.batch_size
 
-        test_loader = jt.dataset.dataset.DataLoader(test_dataset,
+        test_loader = jt.dataset.Dataset(test_dataset,
                                        batch_size=batch_size,
                                        num_workers=self.args.num_workers,
                                        drop_last=False,

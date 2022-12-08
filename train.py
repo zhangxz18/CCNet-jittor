@@ -8,6 +8,7 @@ import sys
 import os
 from tqdm import tqdm
 import os.path as osp
+import networks
 from dataset.datasets import CSDataSet
 
 from tensorboardX import SummaryWriter
@@ -16,25 +17,6 @@ from loss.criterion import CriterionDSN, CriterionOhemDSN
 from engine import Engine
 
 jt.flags.use_cuda = 1
-
-IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
-
-BATCH_SIZE = 8
-DATA_DIRECTORY = 'cityscapes'
-DATA_LIST_PATH = './dataset/list/cityscapes/train.lst'
-IGNORE_LABEL = 255
-INPUT_SIZE = '769,769'
-LEARNING_RATE = 1e-2
-MOMENTUM = 0.9
-NUM_CLASSES = 19
-NUM_STEPS = 40000
-POWER = 0.9
-RANDOM_SEED = 12345
-RESTORE_FROM = './dataset/MS_DeepLab_resnet_pretrained_init.pth'
-SAVE_NUM_IMAGES = 2
-SAVE_PRED_EVERY = 30000
-SNAPSHOT_DIR = './snapshots/'
-WEIGHT_DECAY = 0.0005
 
 IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
 

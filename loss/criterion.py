@@ -8,12 +8,12 @@ class CriterionDSN(Module):
     '''
     DSN : We need to consider two supervision for the model.
     '''
-    def __init__(self, ignore_index=255, use_weight=True, reduction='mean'):
+    def __init__(self, ignore_index=255, use_weight=True):  # , reduction='mean'
         super(CriterionDSN, self).__init__()
         self.ignore_index = ignore_index
-        self.criterion = nn.CrossEntropyLoss(ignore_index=ignore_index, reduction=reduction)
-        if not reduction:
-            print("disabled the reduction.")
+        self.criterion = nn.CrossEntropyLoss(ignore_index=ignore_index)  # , reduction=reduction
+        # if not reduction:
+        #     print("disabled the reduction.")
 
     def execute(self, preds, target):
         h, w = target.size(1), target.size(2)
@@ -34,11 +34,11 @@ class CriterionOhemDSN(Module):
     '''
     DSN : We need to consider two supervision for the model.
     '''
-    def __init__(self, ignore_index=255, thresh=0.7, min_kept=100000, use_weight=True, reduction='mean'):
+    def __init__(self, ignore_index=255, thresh=0.7, min_kept=100000, use_weight=True):  # , reduction='mean'
         super(CriterionOhemDSN, self).__init__()
         self.ignore_index = ignore_index
         self.criterion1 = OhemCrossEntropy2d(ignore_index, thresh, min_kept)
-        self.criterion2 = nn.CrossEntropyLoss(ignore_index=ignore_index, reduction=reduction)
+        self.criterion2 = nn.CrossEntropyLoss(ignore_index=ignore_index)  # , reduction=reduction
 
     def execute(self, preds, target):
         h, w = target.size(1), target.size(2)

@@ -23,6 +23,7 @@ class Bottleneck(Module):
         self.conv3 = nn.Conv(planes, planes * 4, kernel_size=1, bias=False)
         self.bn3 = BatchNorm2d(planes * 4)
         self.relu = nn.ReLU()
+        self.relu_inplace = nn.ReLU()  # retain original names
         self.downsample = downsample
         self.stride = stride
         self.dilation = dilation
@@ -45,7 +46,7 @@ class Bottleneck(Module):
             residual = self.downsample(x)
 
         out += residual
-        out = self.relu(out)
+        out = self.relu_inplace(out)  # retain original names
 
         return out
 
@@ -157,7 +158,7 @@ class ResNet(Module):
 
         return nn.Sequential(*layers)
 
-    def execute(self, input, labels=None):
+    def execute(self, x, labels=None):
 
         x = self.relu1(self.bn1(self.conv1(x)))  # jittor-resnet only one layer
         x = self.relu2(self.bn2(self.conv2(x)))

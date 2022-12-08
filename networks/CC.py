@@ -15,7 +15,7 @@ class CC_module(Module):
         self.INF = INF
         self.gamma = nn.Parameter(jt.zeros(1))
 
-    def forward(self, x):  # TODO debug .contiguous() .view() .permute()
+    def execute(self, x):  # TODO debug .contiguous() .view() .permute()
         m_batchsize, _, height, width = x.size()
         proj_query = self.query_conv(x)
         proj_query_H = proj_query.permute(0,3,1,2).contiguous().view(m_batchsize*width,-1,height).permute(0, 2, 1)

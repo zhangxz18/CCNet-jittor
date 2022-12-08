@@ -15,7 +15,7 @@ class CriterionDSN(Module):
         if not reduction:
             print("disabled the reduction.")
 
-    def forward(self, preds, target):
+    def execute(self, preds, target):
         h, w = target.size(1), target.size(2)
 
         if len(preds) >= 2:  # 上采样？分辨率
@@ -40,7 +40,7 @@ class CriterionOhemDSN(Module):
         self.criterion1 = OhemCrossEntropy2d(ignore_index, thresh, min_kept)
         self.criterion2 = nn.CrossEntropyLoss(ignore_index=ignore_index, reduction=reduction)
 
-    def forward(self, preds, target):
+    def execute(self, preds, target):
         h, w = target.size(1), target.size(2)
 
         scale_pred = nn.interpolate(input=preds[0], size=(h, w), mode='bilinear', align_corners=True)

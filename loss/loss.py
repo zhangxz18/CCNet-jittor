@@ -74,7 +74,7 @@ class OhemCrossEntropy2d(Module):
 
         return new_target
     
-    def forward(self, predict, target, weight=None):
+    def execute(self, predict, target, weight=None):
         """
             Args:
                 predict:(n, c, h, w)

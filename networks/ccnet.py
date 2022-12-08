@@ -50,7 +50,7 @@ class Bottleneck(Module):
 
         return out
 
-class RCCAModule(nn.Module):
+class RCCAModule(Module):
     def __init__(self, in_channels, out_channels, num_classes):
         super(RCCAModule, self).__init__()
         inter_channels = in_channels // 4  # 512

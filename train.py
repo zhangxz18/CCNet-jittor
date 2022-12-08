@@ -225,8 +225,7 @@ def main():
                 loss = model(images, labels).mean()
 
                 reduce_loss = loss.data#engine.all_reduce_tensor(loss)
-                loss.backward()
-                optimizer.step()
+                optimizer.step(loss)
 
 
                 print_str = 'Epoch{}/Iters{}'.format(epoch, global_iteration) \

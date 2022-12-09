@@ -19,14 +19,14 @@ class CriterionDSN(Module):
         h, w = target.size(1), target.size(2)
 
         if len(preds) >= 2:  # 上采样？分辨率
-            scale_pred = nn.interpolate(input=preds[0], size=(h, w), mode='bilinear', align_corners=True)
+            scale_pred = nn.interpolate(preds[0], size=(h, w), mode='bilinear', align_corners=True)
             loss1 = self.criterion(scale_pred, target)
 
-            scale_pred = nn.interpolate(input=preds[1], size=(h, w), mode='bilinear', align_corners=True)
+            scale_pred = nn.interpolate(preds[1], size=(h, w), mode='bilinear', align_corners=True)
             loss2 = self.criterion(scale_pred, target)
             return loss1 + loss2*0.4
         else:
-            scale_pred = nn.interpolate(input=preds[0], size=(h, w), mode='bilinear', align_corners=True)
+            scale_pred = nn.interpolate(preds[0], size=(h, w), mode='bilinear', align_corners=True)
             loss = self.criterion(scale_pred, target)
             return loss
 
@@ -43,10 +43,10 @@ class CriterionOhemDSN(Module):
     def execute(self, preds, target):
         h, w = target.size(1), target.size(2)
 
-        scale_pred = nn.interpolate(input=preds[0], size=(h, w), mode='bilinear', align_corners=True)
+        scale_pred = nn.interpolate(preds[0], size=(h, w), mode='bilinear', align_corners=True)
         loss1 = self.criterion1(scale_pred, target)
 
-        scale_pred = nn.interpolate(input=preds[1], size=(h, w), mode='bilinear', align_corners=True)
+        scale_pred = nn.interpolate(preds[1], size=(h, w), mode='bilinear', align_corners=True)
         loss2 = self.criterion2(scale_pred, target)
 
         return loss1 + loss2*0.4

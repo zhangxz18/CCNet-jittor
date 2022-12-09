@@ -8,7 +8,7 @@ import jittor as jt
 
 from .logger import get_logger
 
-jt.flags.use_cuda = 1
+# jt.flags.use_cuda = 1
 
 logger = get_logger()
 

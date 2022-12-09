@@ -10,9 +10,9 @@ from utils.pyt_utils import extant_file
 
 from dataset.datasets import CSDataSet
 
-jt.flags.use_cuda = 1
-
 logger = get_logger()
+
+# jt.flags.use_cuda = 1
 
 class Engine(object):
     def __init__(self, custom_parser=None):
@@ -89,14 +89,11 @@ class Engine(object):
     def __enter__(self):
         return self
 
-    def clean_cache(self):
+    def __exit__(self, type, value, tb):
         jt.clean_graph()
         jt.sync_all()
         jt.gc()
         jt.display_memory_info()
-
-    def __exit__(self, type, value, tb):
-        self.clean_cache()
         if type is not None:
             logger.warning(
                 "A exception occurred during Engine initialization, "

@@ -46,8 +46,8 @@ class OhemCrossEntropy2d(Module):
         return threshold
 
     def generate_new_target(self, predict, target):  # debug .cpu()
-        np_predict = predict.data.numpy()
-        np_target = target.data.cpu().numpy()
+        np_predict = predict.numpy()
+        np_target = target.numpy()
         n, c, h, w = np_predict.shape
 
         threshold = self.find_threshold(np_predict, np_target)

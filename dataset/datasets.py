@@ -6,7 +6,7 @@ import cv2
 import jittor as jt
 from jittor.dataset import Dataset
 
-jt.flags.use_cuda = 1
+# jt.flags.use_cuda = 1
 
 class CSDataSet(Dataset):
     def __init__(self, root, list_path, max_iters=None, crop_size=(321, 321), mean=(128, 128, 128), scale=True, mirror=True, ignore_label=255):

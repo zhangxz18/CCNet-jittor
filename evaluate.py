@@ -218,10 +218,10 @@ def main():
         model.eval()
 
         dataset = CSDataSet(args.data_dir, args.data_list, crop_size=(1024, 2048), mean=IMG_MEAN, scale=False, mirror=False)
-        test_loader, test_sampler = engine.get_test_loader(dataset)
+        test_loader = engine.get_test_loader(dataset)
 
-        if engine.distributed:
-            test_sampler.set_epoch(0)
+        # if engine.distributed:
+        #     test_sampler.set_epoch(0)
 
         data_list = []
         confusion_matrix = np.zeros((args.num_classes,args.num_classes))

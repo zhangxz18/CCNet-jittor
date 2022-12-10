@@ -98,7 +98,7 @@ def pad_image(img, target_size):
     return padded_img
 
 def predict_sliding(net, image, tile_size, classes, recurrence):
-    interp = nn.Upsample(size=tile_size, mode='bilinear', align_corners=True)
+    # interp = nn.Upsample(size=tile_size, mode='bilinear', align_corners=True)
     image_size = image.shape
     overlap = 1/3
 
@@ -128,7 +128,7 @@ def predict_sliding(net, image, tile_size, classes, recurrence):
             padded_prediction = net(jt.Var(padded_img))
             if isinstance(padded_prediction, list):
                 padded_prediction = padded_prediction[0]
-            padded_prediction = interp(padded_prediction).numpy().transpose(0,2,3,1)
+            padded_prediction = nn.interpolate(prediction, size=tile_size, mode='bilinear', align_corners=True).numpy().transpose(0,2,3,1)
             prediction = padded_prediction[0, 0:img.shape[2], 0:img.shape[3], :]
             count_predictions[0, y1:y2, x1:x2] += 1
             full_probs[:, y1:y2, x1:x2] += prediction  # accumulate the predictions also in the overlapping regions
@@ -143,11 +143,11 @@ def predict_sliding(net, image, tile_size, classes, recurrence):
 def predict_whole(net, image, tile_size, recurrence):
     N_, C_, H_, W_ = image.shape
     image = jt.Var(image)
-    interp = nn.Upsample(size=(H_, W_), mode='bilinear', align_corners=True)
+    # interp = nn.Upsample(size=(H_, W_), mode='bilinear', align_corners=True)
     prediction = net(image)
     if isinstance(prediction, list):
         prediction = prediction[0]
-    prediction = interp(prediction).numpy().transpose(0,2,3,1)
+    prediction = nn.interpolate(prediction, size=(H_, W_), mode='bilinear', align_corners=True).numpy().transpose(0,2,3,1)
     return prediction
 
 def predict_multiscale(net, image, tile_size, scales, classes, flip_evaluation, recurrence):

@@ -171,7 +171,7 @@ def main():
         # seg_model.init_weights()
 
         # group weight and config optimizer
-        optimizer = optim.SGD([{'params': filter(lambda p: p.requires_grad, seg_model.parameters()), 'lr': args.learning_rate}], 
+        optimizer = optim.SGD([{'params': seg_model.parameters(), 'lr': args.learning_rate}], 
                 lr=args.learning_rate, momentum=args.momentum, weight_decay=args.weight_decay)
         optimizer.zero_grad()
 

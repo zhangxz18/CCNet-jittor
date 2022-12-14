@@ -167,9 +167,9 @@ class ResNet(Module):
 
         x = self.layer1(x)
         x = self.layer2(x)
-        x = self.layer3(x)
-        x_dsn = self.dsn(x)
-        x = self.layer4(x)
+        x = self.layer3(x)  # [1,1024,97,97,]
+        x_dsn = self.dsn(x)  # [1,19,97,97,]
+        x = self.layer4(x)  # [1,2048,97,97,]
 
         x = self.head(x, self.recurrence)
 

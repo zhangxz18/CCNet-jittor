@@ -3,8 +3,11 @@ import os
 import sys
 import time
 import argparse
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict, defaultdict, abc
 import jittor as jt
+from jittor import nn
+
+from itertools import repeat
 
 from .logger import get_logger
 
@@ -49,6 +52,8 @@ def load_model(model, model_file, is_restore=False):
         state_dict = jt.load(model_file)
         if 'model' in state_dict.keys():
             state_dict = state_dict['model']
+        if 'state_dict' in state_dict.keys():
+            state_dict = state_dict['state_dict']
     else:
         state_dict = model_file
     t_ioend = time.time()
@@ -109,3 +114,30 @@ def ensure_dir(path):
 def _dbg_interactive(var, value):
     from IPython import embed
     embed()
+
+def to_2tuple(x):
+    if isinstance(x, abc.Iterable):
+        return x
+    return tuple(repeat(x, 2))
+
+
+def drop_path(x, drop_prob: float = 0., training: bool = False):
+    if drop_prob == 0. or not training:
+        return x
+    keep_prob = 1 - drop_prob
+    shape = (x.shape[0],) + (1,) * (x.ndim - 1)  # work with diff dim tensors, not just 2D ConvNets
+    random_tensor = keep_prob + jt.rand(shape, dtype=x.dtype)
+    random_tensor.floor()  # binarize
+    output = x / keep_prob * random_tensor
+    return output
+
+class DropPath(nn.Module):
+    """Drop paths (Stochastic Depth) per sample  (when applied in main path of residual blocks).
+    """
+
+    def __init__(self, drop_prob=None):
+        super(DropPath, self).__init__()
+        self.drop_prob = drop_prob
+
+    def execute(self, x):
+        return drop_path(x, self.drop_prob, self.is_training())

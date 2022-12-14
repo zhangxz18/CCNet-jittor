@@ -1,11 +1,8 @@
 import jittor as jt
 from jittor import nn
-# from jittor import init
-# import math
 import warnings
 
-# from .layers import DropPath, to_2tuple, trunc_normal_
-from jimm.models.layers import DropPath, to_2tuple, trunc_normal_
+from utils.pyt_utils import DropPath, to_2tuple
 
 from utils.pyt_utils import load_model
 from .CC import CC_module as CrissCrossAttention 
@@ -165,7 +162,7 @@ class RCCAModule(nn.Module):
             BatchNorm2d(out_channels),
             nn.ReLU(),
             nn.Dropout(0.1),
-            nn.Conv(512, num_classes, kernel_size=1, stride=1, padding=0, bias=True)
+            nn.Conv(out_channels, num_classes, kernel_size=1, stride=1, padding=0, bias=True)
         )
 
     def execute(self, x, recurrence=1):
@@ -234,19 +231,18 @@ class VAN(nn.Module):
             setattr(self, f"block{i + 1}", block)
             setattr(self, f"norm{i + 1}", norm)
         
-        self.head = RCCAModule(embed_dims[3], embed_dims[3]//4, num_classes)  # TODO Debug
+        self.head = RCCAModule(embed_dims[-1], embed_dims[-1]//4, num_classes)  # TODO Debug
         self.dsn = nn.Sequential(
-            nn.Conv(1024, 512, kernel_size=3, stride=1, padding=1),
-            BatchNorm2d(512), 
+            nn.Conv(embed_dims[-1], embed_dims[-1]//4, kernel_size=3, stride=1, padding=1),
+            BatchNorm2d(embed_dims[-1]//4), 
             nn.ReLU(),
             nn.Dropout(0.1),
-            nn.Conv(512, num_classes, kernel_size=1, stride=1, padding=0, bias=True)
+            nn.Conv(embed_dims[-1]//4, num_classes, kernel_size=1, stride=1, padding=0, bias=True)
         )
         self.criterion = criterion
         self.recurrence = recurrence
 
     def execute(self, x, labels=None):
-        print("x.shape", x.shape)
 
         B = x.shape[0]
         outs = []
@@ -263,15 +259,16 @@ class VAN(nn.Module):
             outs.append(x)
         
         # CC
-        print("outs.shape", outs.shape)
-        x_dsn = self.dsn(x)
-        x = self.head(x, self.recurrence)
+        # outs: [1,64,193,193,], [1,128,97,97,], [1,320,49,49,], [1,512,25,25,]
+
+        x_dsn = self.dsn(x)  # x = outs[-1]
+        x = self.head(x, self.recurrence)  # [1,19,25,25,] 
+
         outs = [x, x_dsn]
         if self.criterion is not None and labels is not None:
             return self.criterion(outs, labels)
         else:
             return outs
-        # return outs
 
 def Seg_Model(num_classes, criterion=None, pretrained_model=None, recurrence=0, **kwargs):
     # van_b0

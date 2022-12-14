@@ -9,7 +9,7 @@ import os
 from tqdm import tqdm
 import os.path as osp
 import networks
-from dataset.datasets import CSDataSet
+from dataset.datasets import CSDataSet,ADEDataSet
 
 from tensorboardX import SummaryWriter
 # from utils.pyt_utils import decode_labels, inv_preprocess, decode_predictions
@@ -111,6 +111,12 @@ def get_parser():
                         help="choose the samples with correct probability underthe threshold.")
     parser.add_argument("--ohem-keep", type=int, default=200000,
                         help="choose the samples with correct probability underthe threshold.")
+    parser.add_argument("--datasets", type=str, default='cityscapes',
+                    help="select the dataset to use. cityscapes and ade is available now.")
+    parser.add_argument("--img_max_size", type=int, default=1000,
+                        help="choose the max size of images in ADE20k")
+    parser.add_argument("--need_crop", action="store_true",
+                    help="Whether to crop the image in ADE20K.")
     return parser
 
 
@@ -152,8 +158,12 @@ def main():
         # data loader
         h, w = map(int, args.input_size.split(','))
         input_size = (h, w)
-        dataset = CSDataSet(args.data_dir, args.data_list, max_iters=None, crop_size=input_size, 
+        if args.datasets == 'cityscapes':
+            dataset = CSDataSet(args.data_dir, args.data_list, max_iters=None, crop_size=input_size, 
                     scale=args.random_scale, mirror=args.random_mirror, mean=IMG_MEAN)
+        elif args.datasets == 'ade':
+            dataset = ADEDataSet(args.data_dir, args.data_list, max_iters=None, crop_size=input_size, 
+            mirror=args.random_mirror, mean=IMG_MEAN, img_max_size=args.img_max_size, is_train=True, need_crop=args.need_crop)
         train_loader = engine.get_train_loader(dataset)
 
         # config network and criterion

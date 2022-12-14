@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 import jittor as jt
 import jittor.nn as nn
-from dataset.datasets import CSDataSet
+from dataset.datasets import CSDataSet, ADEDataSet
 import os
 import scipy.ndimage as nd
 from math import ceil
@@ -64,6 +64,10 @@ def get_parser():
                         help="use whole input size.")
     parser.add_argument("--model", type=str, default='None',
                         help="choose model.")
+    parser.add_argument("--datasets", type=str, default='cityscapes',
+                    help="select the dataset to use. cityscapes and ade is available now.")
+    parser.add_argument("--img_max_size", type=int, default=1000,
+                        help="choose the max size of images in ADE20k")
     return parser
 
 def get_palette(num_cls):
@@ -216,8 +220,11 @@ def main():
 
         model = seg_model
         model.eval()
-
-        dataset = CSDataSet(args.data_dir, args.data_list, crop_size=(1024, 2048), mean=IMG_MEAN, scale=False, mirror=False)
+        if args.datasets == 'cityscapes':
+            dataset = CSDataSet(args.data_dir, args.data_list, crop_size=(1024, 2048), mean=IMG_MEAN, scale=False, mirror=False)
+        else:
+            dataset = ADEDataSet(args.data_dir, args.data_list, crop_size=input_size, 
+            mirror=False, mean=IMG_MEAN, img_max_size=args.img_max_size, is_train=False, need_crop=False)
         test_loader = engine.get_test_loader(dataset)
 
         # if engine.distributed:

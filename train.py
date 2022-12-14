@@ -217,7 +217,7 @@ def main():
 
                 pbar.set_description(print_str, refresh=False)
 
-                if (not engine.distributed) or (engine.distributed and engine.local_rank == 0):
+                if (not jt.in_mpi) or (jt.in_mpi and jt.local_rank == 0):
                     if global_iteration % args.save_pred_every == 0 or global_iteration >= args.num_steps:
                         print('taking snapshot ...')
                         jt.save(seg_model.state_dict(),osp.join(args.snapshot_dir, 'CS_scenes_'+str(global_iteration)+'.pkl')) 

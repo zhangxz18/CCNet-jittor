@@ -189,7 +189,7 @@ def main():
         model = seg_model
         model.train()
 
-        if jt.local_rank() == 0 and not os.path.exists(args.snapshot_dir):
+        if jt.rank == 0 and not os.path.exists(args.snapshot_dir):
             os.makedirs(args.snapshot_dir)
             
         run = True
@@ -227,7 +227,7 @@ def main():
 
                 pbar.set_description(print_str, refresh=False)
 
-                if (not jt.in_mpi) or (jt.in_mpi and jt.local_rank() == 0):
+                if (not jt.in_mpi) or (jt.in_mpi and jt.rank == 0):
                     if global_iteration % args.save_pred_every == 0 or global_iteration >= args.num_steps:
                         print('taking snapshot ...')
                         jt.save(seg_model.state_dict(),osp.join(args.snapshot_dir, 'CS_scenes_'+str(global_iteration)+'.pkl')) 

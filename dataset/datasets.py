@@ -122,7 +122,7 @@ class ADEDataSet(Dataset):
         self.is_train = is_train
         # for split in ["train", "trainval", "val"]:
         for item in self.img_ids:
-            name = item[0]
+            name = item
             img_file = ''
             label_file = ''
             if self.is_train:
@@ -164,7 +164,7 @@ class ADEDataSet(Dataset):
         label = self.id2trainId(label) # todo
         size = image.shape
         name = datafiles["name"]
-        this_short_size = np.random.choice(self.img)
+        this_short_size = np.random.choice(self.imgSizes)
         img_h, img_w = label.shape
         this_scale = min(this_short_size / min (img_h, img_w), self.imgMaxSize / max(img_h, img_w))
         image, label = self.generate_scale_label(image, label, this_scale)
@@ -196,7 +196,7 @@ class ADEDataSet(Dataset):
             img_pad, label_pad = image, label
             img_h, img_w = label_pad.shape
             image = np.asarray(img_pad, np.float32)
-            label = np.asaaray(label_pad, np.float32)
+            label = np.asarray(label_pad, np.float32)
             image = image.transpose((2, 0, 1))
         if self.is_mirror:
             flip = np.random.choice(2) * 2 - 1

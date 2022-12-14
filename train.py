@@ -179,7 +179,7 @@ def main():
         model = seg_model
         model.train()
 
-        if not os.path.exists(args.snapshot_dir):
+        if jt.local_rank == 0 and not os.path.exists(args.snapshot_dir):
             os.makedirs(args.snapshot_dir)
             
         run = True

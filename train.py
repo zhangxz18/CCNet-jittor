@@ -197,10 +197,10 @@ def main():
         avgloss = 0
 
         while run:
-            epoch = global_iteration // len(train_loader)
+            epoch = global_iteration // (len(train_loader)//jt.world_size)
 
             bar_format = '{desc}[{elapsed}<{remaining},{rate_fmt}]'
-            pbar = tqdm(range(len(train_loader)), file=sys.stdout,
+            pbar = tqdm(range(len(train_loader)//jt.world_size), file=sys.stdout,
                         bar_format=bar_format)
             dataloader = iter(train_loader)
             print('start')
@@ -221,7 +221,7 @@ def main():
 
 
                 print_str = 'Epoch{}/Iters{}'.format(epoch, global_iteration) \
-                        + ' Iter{}/{}:'.format(idx + 1, len(train_loader)) \
+                        + ' Iter{}/{}:'.format(idx + 1, len(train_loader)//jt.world_size) \
                         + ' lr=%.2e' % lr \
                         + ' loss=%.2f' % reduce_loss.item()
 

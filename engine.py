@@ -64,7 +64,7 @@ class Engine(object):
 
         train_dataset.set_attrs(batch_size=batch_size,
                                 num_workers=self.args.num_workers,
-                                drop_last=False,
+                                drop_last=True,
                                 shuffle=is_shuffle)
                                 #    pin_memory=True)
         train_loader = train_dataset
@@ -76,7 +76,7 @@ class Engine(object):
 
         test_dataset.set_attrs(batch_size=batch_size,
                             num_workers=self.args.num_workers,
-                            drop_last=False,
+                            drop_last=True,
                             shuffle=is_shuffle)
         test_loader = test_dataset              
         return test_loader

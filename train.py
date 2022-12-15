@@ -36,6 +36,7 @@ SAVE_NUM_IMAGES = 2
 SAVE_PRED_EVERY = 30000
 SNAPSHOT_DIR = './snapshots/'
 WEIGHT_DECAY = 0.0005
+IMG_MAX_SIZE = 600
 
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -113,7 +114,7 @@ def get_parser():
                         help="choose the samples with correct probability underthe threshold.")
     parser.add_argument("--datasets", type=str, default='cityscapes',
                     help="select the dataset to use. cityscapes and ade is available now.")
-    parser.add_argument("--img_max_size", type=int, default=1000,
+    parser.add_argument("--img_max_size", type=int, default=IMG_MAX_SIZE,
                         help="choose the max size of images in ADE20k")
     parser.add_argument("--need_crop", action="store_true",
                     help="Whether to crop the image in ADE20K.")
@@ -230,7 +231,11 @@ def main():
                 if (not jt.in_mpi) or (jt.in_mpi and jt.rank == 0):
                     if global_iteration % args.save_pred_every == 0 or global_iteration >= args.num_steps:
                         print('taking snapshot ...')
-                        jt.save(seg_model.state_dict(),osp.join(args.snapshot_dir, 'CS_scenes_'+str(global_iteration)+'.pkl')) 
+                        if args.datasets == 'cityscapes':
+                            save_path = osp.join(args.snapshot_dir, 'CS_scenes_'+str(global_iteration)+ args.model +'.pkl')
+                        elif args.datasets == 'ade':
+                            save_path = osp.join(args.snapshot_dir, 'ADE20k_'+str(global_iteration)+ args.model + '.pkl')
+                        jt.save(seg_model.state_dict(), save_path) 
 
                 if global_iteration >= args.num_steps:
                     run = False

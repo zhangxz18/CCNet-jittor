@@ -30,6 +30,7 @@ NUM_CLASSES = 19
 NUM_STEPS = 500 # Number of images in the validation set.
 INPUT_SIZE = '769,769'
 RESTORE_FROM = './deeplab_resnet.ckpt'
+IMG_MAX_SIZE = 600
 
 def get_parser():
     """Parse all the arguments provided from the CLI.
@@ -66,7 +67,7 @@ def get_parser():
                         help="choose model.")
     parser.add_argument("--datasets", type=str, default='cityscapes',
                     help="select the dataset to use. cityscapes and ade is available now.")
-    parser.add_argument("--img_max_size", type=int, default=1000,
+    parser.add_argument("--img_max_size", type=int, default=IMG_MAX_SIZE,
                         help="choose the max size of images in ADE20k")
     return parser
 
@@ -242,8 +243,8 @@ def main():
             os.makedirs(save_path)
 
         bar_format = '{desc}[{elapsed}<{remaining},{rate_fmt}]'
-        pbar = tqdm(range(len(test_loader)), file=sys.stdout,
-                    bar_format=bar_format)
+        pbar = tqdm(range(len(test_loader)//jt.world_size), file=sys.stdout,
+                        bar_format=bar_format)
         dataloader = iter(test_loader)
 
         for idx in pbar:
@@ -267,7 +268,7 @@ def main():
             # show_all(gt, output)
             confusion_matrix += get_confusion_matrix(seg_gt, seg_pred, args.num_classes)
 
-            print_str = ' Iter{}/{}'.format(idx + 1, len(test_loader))
+            print_str = ' Iter{}/{}'.format(idx + 1, len(test_loader)//jt.world_size)
             pbar.set_description(print_str, refresh=False)
 
         #confusion_matrix = torch.from_numpy(confusion_matrix).contiguous().cuda()

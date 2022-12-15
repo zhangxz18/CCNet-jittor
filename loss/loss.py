@@ -5,6 +5,8 @@ from jittor import Module
 import numpy as np
 import scipy.ndimage as nd
 
+from utils.pyt_utils import CrossEntropyLoss
+
 class OhemCrossEntropy2d(Module):
     def __init__(self, ignore_label=255, thresh=0.7, min_kept=100000, factor=8):
         super(OhemCrossEntropy2d, self).__init__()
@@ -13,7 +15,7 @@ class OhemCrossEntropy2d(Module):
         # self.min_kept_ratio = float(min_kept_ratio)
         self.min_kept = int(min_kept)
         self.factor = factor
-        self.criterion = nn.CrossEntropyLoss(ignore_index=ignore_label)
+        self.criterion = CrossEntropyLoss(ignore_index=ignore_label)
 
     def find_threshold(self, np_predict, np_target):
         # downsample 1/8

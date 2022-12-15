@@ -3,6 +3,7 @@ from jittor import nn
 from jittor import Module
 
 from .loss import OhemCrossEntropy2d
+from utils.pyt_utils import CrossEntropyLoss
 
 class CriterionDSN(Module):
     '''
@@ -11,7 +12,7 @@ class CriterionDSN(Module):
     def __init__(self, ignore_index=255, use_weight=True):  # , reduction='mean'
         super(CriterionDSN, self).__init__()
         self.ignore_index = ignore_index
-        self.criterion = nn.CrossEntropyLoss(ignore_index=ignore_index)  # , reduction=reduction
+        self.criterion = CrossEntropyLoss(ignore_index=ignore_index)  # , reduction=reduction
         # if not reduction:
         #     print("disabled the reduction.")
 
@@ -38,16 +39,10 @@ class CriterionOhemDSN(Module):
         super(CriterionOhemDSN, self).__init__()
         self.ignore_index = ignore_index
         self.criterion1 = OhemCrossEntropy2d(ignore_index, thresh, min_kept)
-        self.criterion2 = nn.CrossEntropyLoss(ignore_index=ignore_index)  # , reduction=reduction
+        self.criterion2 = CrossEntropyLoss(ignore_index=ignore_index)  # , reduction=reduction
 
     def execute(self, preds, target):
         h, w = target.size(1), target.size(2)
-
-        valid_flag = target != self.ignore_index
-        num_valid = valid_flag.sum()
-        if num_valid <= 0:
-            print("="*130)
-            return jt.array([0.0])
 
         scale_pred = nn.interpolate(preds[0], size=(h, w), mode='bilinear', align_corners=True)
         loss1 = self.criterion1(scale_pred, target)  # scale_pred [1,19,769,769,], target [1,769,769,]

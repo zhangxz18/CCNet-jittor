@@ -222,7 +222,7 @@ def main():
         model = seg_model
         model.eval()
         if args.datasets == 'cityscapes':
-            dataset = CSDataSet(args.data_dir, args.data_list, crop_size=(1024, 2048), mean=IMG_MEAN, scale=False, mirror=False)
+            dataset = CSDataSet(args.data_dir, args.data_list, crop_size=input_size, mean=IMG_MEAN, scale=False, mirror=False)
         else:
             dataset = ADEDataSet(args.data_dir, args.data_list, crop_size=input_size, 
             mirror=False, mean=IMG_MEAN, img_max_size=args.img_max_size, is_train=False, need_crop=False)

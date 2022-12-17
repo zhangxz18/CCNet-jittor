@@ -158,10 +158,11 @@ class ADEDataSet(Dataset):
         label = self.id2trainId(label) # todo
         size = image.shape
         name = datafiles["name"]
-        this_short_size = np.random.choice(self.imgSizes)
-        img_h, img_w = label.shape
-        this_scale = min(this_short_size / min (img_h, img_w), self.imgMaxSize / max(img_h, img_w))
-        image, label = self.generate_scale_label(image, label, this_scale)
+        if self.is_train:
+            this_short_size = np.random.choice(self.imgSizes)
+            img_h, img_w = label.shape
+            this_scale = min(this_short_size / min (img_h, img_w), self.imgMaxSize / max(img_h, img_w))
+            image, label = self.generate_scale_label(image, label, this_scale)
         image = np.asarray(image, np.float32)
         image -= self.mean
         img_h, img_w = label.shape

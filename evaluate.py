@@ -139,6 +139,7 @@ def predict_sliding(net, image, tile_size, classes, recurrence):
             full_probs[:, y1:y2, x1:x2] += prediction  # accumulate the predictions also in the overlapping regions
 
     # average the predictions in the overlapping regions
+    count_predictions = np.where(count_predictions > 0, count_predictions, 1)
     full_probs /= count_predictions
     # visualize normalization Weights
     # plt.imshow(np.mean(count_predictions, axis=2))
@@ -255,7 +256,7 @@ def main():
 
 
             seg_pred = np.asarray(np.argmax(output, axis=3), dtype=np.uint8)
-            seg_gt = np.asarray(label.numpy()[:,:size[0],:size[1]], dtype=np.int)
+            seg_gt = np.asarray(label.numpy()[:,:size[0],:size[1]], dtype=np.uint8)
 
             for i in range(image.size(0)): 
                 output_im = PILImage.fromarray(seg_pred[i])

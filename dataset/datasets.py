@@ -148,7 +148,8 @@ class ADEDataSet(Dataset):
 
     def id2trainId(self, label, reverse=False):
         label_copy = label.copy()
-        label_copy[label == 0] = self.ignore_label
+        label_copy -= 1
+        label_copy[label == -1] = self.ignore_label
         return label_copy
 
     def __getitem__(self, index):

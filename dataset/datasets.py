@@ -102,11 +102,12 @@ class CSDataSet(Dataset):
 
 
 class ADEDataSet(Dataset):
-    def __init__(self, root, list_path, max_iters=None, crop_size=(321, 321), mean=(128, 128, 128), mirror=True, ignore_label=255, img_max_size=769, is_train = True, need_crop = False):
+    def __init__(self, root, list_path, max_iters=None, crop_size=(321, 321), mean=(128, 128, 128), mirror=True, ignore_label=255, img_max_size=769, is_train = True, need_crop = False, imgSizes = 600):
         super().__init__()
         self.root = root
         self.list_path = list_path
-        self.imgSizes = [300, 375, 450, 525, 600]
+        # self.imgSizes = [300, 375, 450, 525, 600]
+        self.imgSizes = imgSizes
         self.imgMaxSize = img_max_size
         self.need_crop = need_crop
         if self.need_crop:
@@ -160,7 +161,10 @@ class ADEDataSet(Dataset):
         size = image.shape
         name = datafiles["name"]
         if self.is_train:
-            this_short_size = np.random.choice(self.imgSizes)
+            if isinstance(self.imgSizes, list):
+                this_short_size = np.random.choice(self.imgSizes)
+            else:
+                this_short_size = self.imgSizes
             img_h, img_w = label.shape
             this_scale = min(this_short_size / min (img_h, img_w), self.imgMaxSize / max(img_h, img_w))
             image, label = self.generate_scale_label(image, label, this_scale)

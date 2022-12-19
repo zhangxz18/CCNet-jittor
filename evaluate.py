@@ -256,7 +256,7 @@ def main():
 
 
             seg_pred = np.asarray(np.argmax(output, axis=3), dtype=np.uint8)
-            seg_gt = np.asarray(label.numpy()[:,:size[0],:size[1]], dtype=np.uint8)
+            seg_gt = np.asarray(label.numpy()[:,:size[0],:size[1]], dtype=np.int)
 
             for i in range(image.size(0)): 
                 output_im = PILImage.fromarray(seg_pred[i])

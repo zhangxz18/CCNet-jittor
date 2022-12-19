@@ -160,3 +160,6 @@ cython_debug/
 #.idea/
 cityscape/
 dataset/resnet101-imagenet.pth
+outputs/
+dataset/van_b1.pth
+snapshots/

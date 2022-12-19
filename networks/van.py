@@ -233,11 +233,11 @@ class VAN(nn.Module):
         
         self.head = RCCAModule(embed_dims[-1], embed_dims[-1]//4, num_classes)  # TODO Debug
         self.dsn = nn.Sequential(
-            nn.Conv(embed_dims[-1], embed_dims[-1]//4, kernel_size=3, stride=1, padding=1),
-            BatchNorm2d(embed_dims[-1]//4), 
+            nn.Conv(embed_dims[-2], embed_dims[-2]//4, kernel_size=3, stride=1, padding=1),
+            BatchNorm2d(embed_dims[-2]//4), 
             nn.ReLU(),
             nn.Dropout(0.1),
-            nn.Conv(embed_dims[-1]//4, num_classes, kernel_size=1, stride=1, padding=0, bias=True)
+            nn.Conv(embed_dims[-2]//4, num_classes, kernel_size=1, stride=1, padding=0, bias=True)
         )
         self.criterion = criterion
         self.recurrence = recurrence
@@ -261,7 +261,7 @@ class VAN(nn.Module):
         # CC
         # outs: [1,64,193,193,], [1,128,97,97,], [1,320,49,49,], [1,512,25,25,]
 
-        x_dsn = self.dsn(x)  # x = outs[-1]
+        x_dsn = self.dsn(outs[-2])  # x = outs[-1] # [1,19,49,49,] 
         x = self.head(x, self.recurrence)  # [1,19,25,25,] 
 
         outs = [x, x_dsn]
@@ -277,10 +277,16 @@ def Seg_Model(num_classes, criterion=None, pretrained_model=None, recurrence=0, 
     #         mlp_ratios=[8, 8, 4, 4], 
     #         depths=[3, 3, 5, 2])
     # van_b1
+    # model = VAN(num_classes, criterion, recurrence,
+    #         embed_dims=[64, 128, 320, 512], 
+    #         mlp_ratios=[8, 8, 4, 4], 
+    #         depths=[2, 2, 4, 2])
+
+    # van_b2
     model = VAN(num_classes, criterion, recurrence,
             embed_dims=[64, 128, 320, 512], 
             mlp_ratios=[8, 8, 4, 4], 
-            depths=[2, 2, 4, 2])
+            depths=[3, 3, 12, 3])
 
     if pretrained_model is not None:
         model = load_model(model, pretrained_model)

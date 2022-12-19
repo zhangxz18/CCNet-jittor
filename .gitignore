@@ -162,4 +162,5 @@ cityscape/
 dataset/resnet101-imagenet.pth
 outputs/
 dataset/van_b1.pth
+dataset/van_b2.pth
 snapshots/

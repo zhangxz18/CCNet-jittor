@@ -102,7 +102,7 @@ class CSDataSet(Dataset):
 
 
 class ADEDataSet(Dataset):
-    def __init__(self, root, list_path, max_iters=None, crop_size=(321, 321), mean=(128, 128, 128), mirror=True, ignore_label=255, is_train = True, need_crop = False, imgSizes = 600):
+    def __init__(self, root, list_path, max_iters=None, crop_size=(321, 321), mean=(128, 128, 128), mirror=True, ignore_label=255, is_train = True, need_crop = False, imgSizes = 512):
         super().__init__()
         self.root = root
         self.list_path = list_path
@@ -149,7 +149,7 @@ class ADEDataSet(Dataset):
     def id2trainId(self, label, reverse=False):
         label_copy = label.copy()
         label_copy -= 1
-        label_copy[label == -1] = self.ignore_label
+        label_copy[label == 0] = self.ignore_label
         return label_copy
 
     def __getitem__(self, index):
@@ -159,14 +159,19 @@ class ADEDataSet(Dataset):
         label = self.id2trainId(label) # todo
         size = image.shape
         name = datafiles["name"]
+        # if self.is_train:
+        if isinstance(self.imgSizes, list):
+            this_short_size = np.random.choice(self.imgSizes)
+        else:
+            this_short_size = self.imgSizes
+        img_h, img_w = label.shape
+        this_scale = this_short_size / min (img_h, img_w)
         if self.is_train:
-            if isinstance(self.imgSizes, list):
-                this_short_size = np.random.choice(self.imgSizes)
-            else:
-                this_short_size = self.imgSizes
-            img_h, img_w = label.shape
-            this_scale = this_short_size / min (img_h, img_w)
-            image, label = self.generate_scale_label(image, label, this_scale)
+            random_scale_factor = 0.5 + random.randint(0, 16) / 10.0
+        else:
+            random_scale_factor = 1
+        image, label = self.generate_scale_label(image, label, this_scale * random_scale_factor)
+
         image = np.asarray(image, np.float32)
         image -= self.mean
         img_h, img_w = label.shape

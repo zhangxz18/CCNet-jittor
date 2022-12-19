@@ -164,7 +164,7 @@ def main():
                     scale=args.random_scale, mirror=args.random_mirror, mean=IMG_MEAN)
         elif args.datasets == 'ade':
             dataset = ADEDataSet(args.data_dir, args.data_list, max_iters=None, crop_size=input_size, 
-            mirror=args.random_mirror, mean=IMG_MEAN, img_max_size=args.img_max_size, is_train=True, need_crop=args.need_crop)
+            mirror=args.random_mirror, mean=IMG_MEAN, is_train=True, need_crop=args.need_crop)
         train_loader = engine.get_train_loader(dataset)
 
         # config network and criterion

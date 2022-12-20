@@ -67,8 +67,6 @@ def get_parser():
                         help="choose model.")
     parser.add_argument("--datasets", type=str, default='cityscapes',
                     help="select the dataset to use. cityscapes and ade is available now.")
-    parser.add_argument("--img_max_size", type=int, default=IMG_MAX_SIZE,
-                        help="choose the max size of images in ADE20k")
     return parser
 
 def get_palette(num_cls):
@@ -226,7 +224,7 @@ def main():
             dataset = CSDataSet(args.data_dir, args.data_list, crop_size=input_size, mean=IMG_MEAN, scale=False, mirror=False)
         else:
             dataset = ADEDataSet(args.data_dir, args.data_list, crop_size=input_size, 
-            mirror=False, mean=IMG_MEAN, img_max_size=args.img_max_size, is_train=False, need_crop=False)
+            mirror=False, mean=IMG_MEAN, is_train=False, need_crop=False)
         test_loader = engine.get_test_loader(dataset)
 
         # if engine.distributed:

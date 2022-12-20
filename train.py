@@ -232,9 +232,9 @@ def main():
                     if global_iteration % args.save_pred_every == 0 or global_iteration >= args.num_steps:
                         print('taking snapshot ...')
                         if args.datasets == 'cityscapes':
-                            save_path = osp.join(args.snapshot_dir, 'CS_scenes_'+str(global_iteration)+ args.model +'.pkl')
+                            save_path = osp.join(args.snapshot_dir, 'CS_scenes_'+str(global_iteration) + '_' + args.model +'.pkl')
                         elif args.datasets == 'ade':
-                            save_path = osp.join(args.snapshot_dir, 'ADE20k_'+str(global_iteration)+ args.model + '.pkl')
+                            save_path = osp.join(args.snapshot_dir, 'ADE20k_'+str(global_iteration) + '_' + args.model + '.pkl')
                         jt.save(seg_model.state_dict(), save_path) 
 
                 if global_iteration >= args.num_steps:

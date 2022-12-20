@@ -271,22 +271,41 @@ class VAN(nn.Module):
             return outs
 
 def Seg_Model(num_classes, criterion=None, pretrained_model=None, recurrence=0, **kwargs):
-    # van_b0
+    # # van_b0
     # model = VAN(num_classes, criterion, recurrence,
     #         embed_dims=[32, 64, 160, 256], 
-    #         mlp_ratios=[8, 8, 4, 4], 
-    #         depths=[3, 3, 5, 2])
-    # van_b1
+    #         depths=[3, 3, 5, 2],
+    #         drop_path_rate=0.1)
+    # # van_b1
     # model = VAN(num_classes, criterion, recurrence,
     #         embed_dims=[64, 128, 320, 512], 
-    #         mlp_ratios=[8, 8, 4, 4], 
-    #         depths=[2, 2, 4, 2])
-
-    # van_b2
+    #         depths=[2, 2, 4, 2],
+    #         drop_path_rate=0.1)
+    # # van_b2
+    # model = VAN(num_classes, criterion, recurrence,
+    #         embed_dims=[64, 128, 320, 512], 
+    #         depths=[3, 3, 12, 3],
+    #         drop_path_rate=0.1)
+    # # van_b3
+    # model = VAN(num_classes, criterion, recurrence,
+    #         embed_dims=[64, 128, 320, 512], 
+    #         depths=[3, 5, 27, 3],
+    #         drop_path_rate=0.3)
+    # # van_b4
+    # model = VAN(num_classes, criterion, recurrence,
+    #         embed_dims=[64, 128, 320, 512], 
+    #         depths=[3, 6, 40, 3],
+    #         drop_path_rate=0.4)
+    # # van_b5
+    # model = VAN(num_classes, criterion, recurrence,
+    #         embed_dims=[96, 192, 480, 768], 
+    #         depths=[3, 3, 24, 3],
+    #         drop_path_rate=0.4)
+    # van_b6
     model = VAN(num_classes, criterion, recurrence,
-            embed_dims=[64, 128, 320, 512], 
-            mlp_ratios=[8, 8, 4, 4], 
-            depths=[3, 3, 12, 3])
+            embed_dims=[96, 192, 480, 768], 
+            depths=[6, 6, 90, 6],
+            drop_path_rate=0.5)
 
     if pretrained_model is not None:
         model = load_model(model, pretrained_model)

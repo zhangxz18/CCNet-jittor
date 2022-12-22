@@ -102,19 +102,22 @@ class CSDataSet(Dataset):
 
 
 class ADEDataSet(Dataset):
-    def __init__(self, root, list_path, max_iters=None, crop_size=(321, 321), mean=(128, 128, 128), mirror=True, ignore_label=255, is_train = True, need_crop = False, imgSizes = 512):
+    def __init__(self, root, list_path, max_iters=None, crop_size=(321, 321), mean=(128, 128, 128), std=(1, 1, 1), mirror=True, ignore_label=255, is_train=True, need_crop=False, imgSizes=[300, 375, 450, 525, 600], max_img_size=769, padding_constant=32, down_sample_rate=4):
         super().__init__()
         self.root = root
         self.list_path = list_path
-        # self.imgSizes = [300, 375, 450, 525, 600]
-        self.imgSizes = imgSizes
+        self.mean = mean
+        self.std = std
+        self.is_mirror = mirror
+        self.ignore_label = ignore_label
         self.need_crop = need_crop
         if self.need_crop:
             self.crop_h, self.crop_w = crop_size
-        self.ignore_label = ignore_label
-        self.mean = mean
-        self.is_mirror = mirror
-        # self.mean_bgr = np.array([104.00698793, 116.66876762, 122.67891434])
+        self.imgSizes = imgSizes
+        self.max_img_size = max_img_size
+        self.padding_constant = padding_constant
+        self.down_sample_rate = down_sample_rate
+
         self.img_ids = [i_id.strip().split()[0] for i_id in open(list_path)]
         if not max_iters==None:
                 self.img_ids = self.img_ids * int(np.ceil(float(max_iters) / len(self.img_ids)))
@@ -148,33 +151,39 @@ class ADEDataSet(Dataset):
 
     def id2trainId(self, label, reverse=False):
         label_copy = label.copy()
+        label_copy[label_copy == 0] = self.ignore_label
         label_copy -= 1
-        label_copy[label == 0] = self.ignore_label
+        label_copy[label_copy == (self.ignore_label-1)] = self.ignore_label
         return label_copy
+
+    def round2nearest_multiple(self, x, p):
+        return ((x - 1) // p + 1) * p
 
     def __getitem__(self, index):
         datafiles = self.files[index]
         image = cv2.imread(datafiles["img"], cv2.IMREAD_COLOR)
         label = cv2.imread(datafiles["label"], cv2.IMREAD_GRAYSCALE)
-        label = self.id2trainId(label) # todo
+        label = self.id2trainId(label)
         size = image.shape
         name = datafiles["name"]
-        # if self.is_train:
-        if isinstance(self.imgSizes, list):
-            this_short_size = np.random.choice(self.imgSizes)
-        else:
-            this_short_size = self.imgSizes
-        img_h, img_w = label.shape
-        this_scale = this_short_size / min (img_h, img_w)
+        # print(f"img_h:%d, img_w:%d" % (img_h, img_w))
         if self.is_train:
-            random_scale_factor = 0.5 + random.randint(0, 16) / 10.0
-        else:
-            random_scale_factor = 1
-        image, label = self.generate_scale_label(image, label, this_scale * random_scale_factor)
+            this_short_size = np.random.choice(self.imgSizes)
+            img_h, img_w = label.shape
+            this_scale = min(this_short_size / min (img_h, img_w), self.max_img_size / max(img_h, img_w))
+            image, label = self.generate_scale_label(image, label, this_scale)
+
+        # if self.is_train:
+        #     random_scale_factor = 0.5 + random.randint(0, 16) / 10.0
+        # else:
+        #     random_scale_factor = 1.
+
+        # image, label = self.generate_scale_label(image, label, this_scale * random_scale_factor)
 
         image = np.asarray(image, np.float32)
-        image -= self.mean
+        image = (image - self.mean)
         img_h, img_w = label.shape
+        size = image.shape
         if self.need_crop:
             pad_h = max(self.crop_h - img_h, 0)
             pad_w = max(self.crop_w - img_w, 0)
@@ -195,16 +204,17 @@ class ADEDataSet(Dataset):
             image = np.asarray(img_pad[h_off : h_off+self.crop_h, w_off : w_off+self.crop_w], np.float32)
             label = np.asarray(label_pad[h_off : h_off+self.crop_h, w_off : w_off+self.crop_w], np.float32)
             #image = image[:, :, ::-1]  # change to BGR
+            size = image.shape
             image = image.transpose((2, 0, 1))
         else:
-            img_pad, label_pad = image, label
-            img_h, img_w = label_pad.shape
-            image = np.asarray(img_pad, np.float32)
-            label = np.asarray(label_pad, np.float32)
+            image = np.asarray(image, np.float32)
+            label = np.asarray(label, np.float32)
+            size = image.shape
             image = image.transpose((2, 0, 1))
         if self.is_mirror:
             flip = np.random.choice(2) * 2 - 1
             image = image[:, :, ::flip]
             label = label[:, ::flip]
+        
 
         return image.copy(), label.copy(), np.array(size), name

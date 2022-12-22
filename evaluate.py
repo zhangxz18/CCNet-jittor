@@ -21,7 +21,8 @@ from engine import Engine
 jt.flags.use_cuda = 1
 
 IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
-
+ADE_IMG_MEAN = np.array((103.5, 116.28, 123.675), dtype=np.float32)
+ADE_IMG_STD = np.array((0.225, 0.224, 0.229), dtype=np.float32)
 DATA_DIRECTORY = 'cityscapes'
 DATA_LIST_PATH = './dataset/list/cityscapes/val.lst'
 IGNORE_LABEL = 255
@@ -224,7 +225,7 @@ def main():
             dataset = CSDataSet(args.data_dir, args.data_list, crop_size=input_size, mean=IMG_MEAN, scale=False, mirror=False)
         else:
             dataset = ADEDataSet(args.data_dir, args.data_list, crop_size=input_size, 
-            mirror=False, mean=IMG_MEAN, is_train=False, need_crop=False)
+            mirror=False, mean=ADE_IMG_MEAN, std=ADE_IMG_STD,is_train=False, need_crop=False, imgSizes=600)
         test_loader = engine.get_test_loader(dataset)
 
         # if engine.distributed:

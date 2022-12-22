@@ -19,7 +19,8 @@ from engine import Engine
 jt.flags.use_cuda = 1
 
 IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
-
+ADE_IMG_MEAN = np.array((103.5, 116.28, 123.675), dtype=np.float32)
+ADE_IMG_STD = np.array((0.225, 0.224, 0.229), dtype=np.float32)
 BATCH_SIZE = 8
 DATA_DIRECTORY = 'cityscapes'
 DATA_LIST_PATH = './dataset/list/cityscapes/train.lst'
@@ -118,6 +119,8 @@ def get_parser():
                         help="choose the max size of images in ADE20k")
     parser.add_argument("--need_crop", action="store_true",
                     help="Whether to crop the image in ADE20K.")
+    parser.add_argument("--batch_per_gpu", type=int, default=1, 
+                    help="if you want to run 8 batch in 4 gpu, batch_per_gpu is 2")
     return parser
 
 
@@ -164,7 +167,8 @@ def main():
                     scale=args.random_scale, mirror=args.random_mirror, mean=IMG_MEAN)
         elif args.datasets == 'ade':
             dataset = ADEDataSet(args.data_dir, args.data_list, max_iters=None, crop_size=input_size, 
-            mirror=args.random_mirror, mean=IMG_MEAN, is_train=True, need_crop=args.need_crop)
+            mirror=args.random_mirror, mean=IMG_MEAN, std=ADE_IMG_STD, is_train=True, need_crop=args.need_crop,
+            max_img_size=args.img_max_size)
         train_loader = engine.get_train_loader(dataset)
 
         # config network and criterion
@@ -211,14 +215,16 @@ def main():
 
                 images, labels, _, _ = next(dataloader)
                 labels = labels.long()
-
-                optimizer.zero_grad()
+                
                 lr = adjust_learning_rate(optimizer, args.learning_rate, global_iteration-1, args.num_steps, args.power)
                 print('lr',lr)
                 loss = model(images, labels).mean()
 
                 reduce_loss = loss.data#engine.all_reduce_tensor(loss)
-                optimizer.step(loss)
+                optimizer.backward(loss / args.batch_per_gpu)
+                if (idx+1) % args.batch_per_gpu == 0:
+                    optimizer.step()
+                    # optimizer.zero_grad()
 
 
                 print_str = 'Epoch{}/Iters{}'.format(epoch, global_iteration) \

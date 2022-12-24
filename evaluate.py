@@ -167,8 +167,13 @@ def predict_multiscale(net, image, tile_size, scales, classes, flip_evaluation, 
     for scale in scales:
         scale = float(scale)
         scale_image = ndimage.zoom(image, (1.0, 1.0, scale, scale), order=1, prefilter=False)
-        # scaled_probs = predict_whole(net, scale_image, tile_size, recurrence)
-        scaled_probs = predict_sliding(net, scale_image, tile_size, classes, recurrence)
+
+        stride = ceil(tile_size[0] * (1 - 1/3))
+        if scale_image.shape[2] < stride and scale_image.shape[3] < stride:
+            scaled_probs = predict_whole(net, scale_image, tile_size, recurrence)
+        else:
+            scaled_probs = predict_sliding(net, scale_image, tile_size, classes, recurrence)
+
         if flip_evaluation == True:
             # flip_scaled_probs = predict_whole(net, scale_image[:,:,:,::-1].copy(), tile_size, recurrence)
             flip_scaled_probs = predict_sliding(net, scale_image[:,:,:,::-1].copy(), tile_size, classes, recurrence)

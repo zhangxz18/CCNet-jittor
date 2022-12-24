@@ -51,12 +51,12 @@ class Bottleneck(Module):
         return out
 
 class RCCAModule(Module):
-    def __init__(self, in_channels, out_channels, num_classes):
+    def __init__(self, in_channels, out_channels, num_classes, need_draw=False):
         super(RCCAModule, self).__init__()
         inter_channels = in_channels // 4  # 512
         self.conva = nn.Sequential(nn.Conv(in_channels, inter_channels, 3, padding=1, bias=False),
                                    BatchNorm2d(inter_channels), nn.ReLU())
-        self.cca = CrissCrossAttention(inter_channels)
+        self.cca = CrissCrossAttention(inter_channels, need_draw=need_draw)
         self.convb = nn.Sequential(nn.Conv(inter_channels, inter_channels, 3, padding=1, bias=False),
                                    BatchNorm2d(inter_channels), nn.ReLU())
 
@@ -67,18 +67,27 @@ class RCCAModule(Module):
             nn.Dropout(0.1),
             nn.Conv(512, num_classes, kernel_size=1, stride=1, padding=0, bias=True)
         )
+        self.need_draw = need_draw
 
     def execute(self, x, recurrence=1):
         output = self.conva(x)
+        att_maps = []
         for _ in range(recurrence):
-            output = self.cca(output)
+            if not self.need_draw:
+                output = self.cca(output)
+            else:
+                output, temp_att = self.cca(output)
+                att_maps.append(temp_att)
         output = self.convb(output)
 
         output = self.bottleneck(jt.concat([x, output], 1))  # debug
-        return output
+        if not self.need_draw:
+            return output
+        else:
+            return output, att_maps
 
 class ResNet(Module):
-    def __init__(self, block, layers, num_classes, criterion, recurrence, output_stride=8):
+    def __init__(self, block, layers, num_classes, criterion, recurrence, output_stride=8, need_draw=False):
         super(ResNet, self).__init__()
         
         self.inplanes = 128  # jittor-resnet self.inplanes = 64  # 
@@ -111,7 +120,7 @@ class ResNet(Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=strides[2], dilation=dilations[2])
         self.layer4 = self._make_MG_unit(block, 512, blocks=blocks, stride=strides[3], dilation=dilations[3])
 
-        self.head = RCCAModule(2048, 512, num_classes)
+        self.head = RCCAModule(2048, 512, num_classes, need_draw=need_draw)
         self.dsn = nn.Sequential(
             nn.Conv(1024, 512, kernel_size=3, stride=1, padding=1),
             BatchNorm2d(512), 
@@ -121,6 +130,7 @@ class ResNet(Module):
         )
         self.criterion = criterion
         self.recurrence = recurrence
+        self.need_draw = need_draw
 
     def _make_layer(self, block, planes, blocks, stride=1, dilation=1):
         downsample = None
@@ -170,18 +180,25 @@ class ResNet(Module):
         x = self.layer3(x)  # [1,1024,97,97,]
         x_dsn = self.dsn(x)  # [1,19,97,97,]
         x = self.layer4(x)  # [1,2048,97,97,]
-
-        x = self.head(x, self.recurrence)
-
-        outs = [x, x_dsn]
-        if self.criterion is not None and labels is not None:
-            return self.criterion(outs, labels)
+        if not self.need_draw:
+            x = self.head(x, self.recurrence)
+            outs = [x, x_dsn]
+            if self.criterion is not None and labels is not None:
+                return self.criterion(outs, labels)
+            else:
+                return outs
         else:
-            return outs
+            x, att_maps = self.head(x, self.recurrence)
+            outs = [x, x_dsn]
+            if self.criterion is not None and labels is not None:
+                return self.criterion(outs, labels), att_maps
+            else:
+                return outs, att_maps
 
 
-def Seg_Model(num_classes, criterion=None, pretrained_model=None, recurrence=0, **kwargs):
-    model = ResNet(Bottleneck,[3, 4, 23, 3], num_classes, criterion, recurrence)  # resnet50 [3,4,6,3]
+
+def Seg_Model(num_classes, criterion=None, pretrained_model=None, recurrence=0, need_draw=False, **kwargs):
+    model = ResNet(Bottleneck,[3, 4, 23, 3], num_classes, criterion, recurrence, need_draw=need_draw)  # resnet50 [3,4,6,3]
 
     if pretrained_model is not None:
         model = load_model(model, pretrained_model)

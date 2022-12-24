@@ -1,0 +1,2 @@
+export CUDA_VISIBLE_DEVICES=1,2,3,4
+python draw_attention.py --data-dir ../datasets/cityscape  --recurrence 2 --model ccnet --restore-from ./snapshots/CS_scenes_40000ccnet.pkl --whole True --batch-size 1 --picture_num 3

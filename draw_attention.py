@@ -1,0 +1,250 @@
+import argparse
+import scipy
+from scipy import ndimage
+import cv2
+import numpy as np
+import sys
+import json
+from tqdm import tqdm
+
+import jittor as jt
+import jittor.nn as nn
+from dataset.datasets import CSDataSet, ADEDataSet
+import os
+import scipy.ndimage as nd
+from math import ceil
+from PIL import Image as PILImage
+from utils.pyt_utils import load_model
+import networks
+from engine import Engine
+
+jt.flags.use_cuda = 1
+
+IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
+ADE_IMG_MEAN = np.array((103.5, 116.28, 123.675), dtype=np.float32)
+ADE_IMG_STD = np.array((0.225, 0.224, 0.229), dtype=np.float32)
+DATA_DIRECTORY = 'cityscapes'
+DATA_LIST_PATH = './dataset/list/cityscapes/val.lst'
+IGNORE_LABEL = 255
+BATCH_SIZE = 4
+NUM_CLASSES = 19
+NUM_STEPS = 500 # Number of images in the validation set.
+INPUT_SIZE = '769,769'
+RESTORE_FROM = './deeplab_resnet.ckpt'
+IMG_MAX_SIZE = 600
+ADE_PALETTE_RGB = [[120, 120, 120], [180, 120, 120], [6, 230, 230], [80, 50, 50],
+               [4, 200, 3], [120, 120, 80], [140, 140, 140], [204, 5, 255],
+               [230, 230, 230], [4, 250, 7], [224, 5, 255], [235, 255, 7],
+               [150, 5, 61], [120, 120, 70], [8, 255, 51], [255, 6, 82],
+               [143, 255, 140], [204, 255, 4], [255, 51, 7], [204, 70, 3],
+               [0, 102, 200], [61, 230, 250], [255, 6, 51], [11, 102, 255],
+               [255, 7, 71], [255, 9, 224], [9, 7, 230], [220, 220, 220],
+               [255, 9, 92], [112, 9, 255], [8, 255, 214], [7, 255, 224],
+               [255, 184, 6], [10, 255, 71], [255, 41, 10], [7, 255, 255],
+               [224, 255, 8], [102, 8, 255], [255, 61, 6], [255, 194, 7],
+               [255, 122, 8], [0, 255, 20], [255, 8, 41], [255, 5, 153],
+               [6, 51, 255], [235, 12, 255], [160, 150, 20], [0, 163, 255],
+               [140, 140, 140], [250, 10, 15], [20, 255, 0], [31, 255, 0],
+               [255, 31, 0], [255, 224, 0], [153, 255, 0], [0, 0, 255],
+               [255, 71, 0], [0, 235, 255], [0, 173, 255], [31, 0, 255],
+               [11, 200, 200], [255, 82, 0], [0, 255, 245], [0, 61, 255],
+               [0, 255, 112], [0, 255, 133], [255, 0, 0], [255, 163, 0],
+               [255, 102, 0], [194, 255, 0], [0, 143, 255], [51, 255, 0],
+               [0, 82, 255], [0, 255, 41], [0, 255, 173], [10, 0, 255],
+               [173, 255, 0], [0, 255, 153], [255, 92, 0], [255, 0, 255],
+               [255, 0, 245], [255, 0, 102], [255, 173, 0], [255, 0, 20],
+               [255, 184, 184], [0, 31, 255], [0, 255, 61], [0, 71, 255],
+               [255, 0, 204], [0, 255, 194], [0, 255, 82], [0, 10, 255],
+               [0, 112, 255], [51, 0, 255], [0, 194, 255], [0, 122, 255],
+               [0, 255, 163], [255, 153, 0], [0, 255, 10], [255, 112, 0],
+               [143, 255, 0], [82, 0, 255], [163, 255, 0], [255, 235, 0],
+               [8, 184, 170], [133, 0, 255], [0, 255, 92], [184, 0, 255],
+               [255, 0, 31], [0, 184, 255], [0, 214, 255], [255, 0, 112],
+               [92, 255, 0], [0, 224, 255], [112, 224, 255], [70, 184, 160],
+               [163, 0, 255], [153, 0, 255], [71, 255, 0], [255, 0, 163],
+               [255, 204, 0], [255, 0, 143], [0, 255, 235], [133, 255, 0],
+               [255, 0, 235], [245, 0, 255], [255, 0, 122], [255, 245, 0],
+               [10, 190, 212], [214, 255, 0], [0, 204, 255], [20, 0, 255],
+               [255, 255, 0], [0, 153, 255], [0, 41, 255], [0, 255, 204],
+               [41, 0, 255], [41, 255, 0], [173, 0, 255], [0, 245, 255],
+               [71, 0, 255], [122, 0, 255], [0, 255, 184], [0, 92, 255],
+               [184, 255, 0], [0, 133, 255], [255, 214, 0], [25, 194, 194],
+               [102, 255, 0], [92, 0, 255]] 
+
+def get_parser():
+    """Parse all the arguments provided from the CLI.
+    
+    Returns:
+      A list of parsed arguments.
+    """
+    parser = argparse.ArgumentParser(description="DeepLabLFOV Network")
+    parser.add_argument("--data-dir", type=str, default=DATA_DIRECTORY,
+                        help="Path to the directory containing the dataset.")
+    parser.add_argument("--data-list", type=str, default=DATA_LIST_PATH,
+                        help="Path to the file listing the images in the dataset.")
+    parser.add_argument("--ignore-label", type=int, default=IGNORE_LABEL,
+                        help="The index of the label to ignore during the training.")
+    parser.add_argument("--batch-size", type=int, default=BATCH_SIZE,
+                        help="Number of images sent to the network in one step.")
+    parser.add_argument("--num-classes", type=int, default=NUM_CLASSES,
+                        help="Number of classes to predict (including background).")
+    parser.add_argument("--restore-from", type=str, default=RESTORE_FROM,
+                        help="Where restore model parameters from.")
+    parser.add_argument("--Output", type=str, default='./',
+                        help="Where restore model parameters from.")
+    parser.add_argument("--recurrence", type=int, default=1,
+                        help="choose the number of recurrence.")
+    parser.add_argument("--input-size", type=str, default=INPUT_SIZE,
+                        help="Comma-separated string with height and width of images.")
+    parser.add_argument("--num-workers", type=int, default=8,
+                        help="choose the number of recurrence.")
+    parser.add_argument("--whole", type=bool, default=False,
+                        help="use whole input size.")
+    parser.add_argument("--model", type=str, default='None',
+                        help="choose model.")
+    parser.add_argument("--datasets", type=str, default='cityscapes',
+                    help="select the dataset to use. cityscapes and ade is available now.")
+    parser.add_argument("--picture_num", type=int, default=20,
+                    help="the picture number in dataset to draw")
+    return parser
+
+def shows_attention1(att_maps, pos = [28, 122]):
+    att_map1 = att_maps[0]
+    _, _, h, w = att_map1.shape
+    vis_map = np.zeros((h, w), dtype=np.float32)
+    att_vector = att_map1[0,:,pos[0], pos[1]]
+    for i in range(w):
+        vis_map[pos[0], i] = att_vector[i]
+    for i in range(w,h+w-1):
+        new_i = i - w
+        if i >= pos[0]:
+            new_i = new_i + 1
+        vis_map[new_i, pos[1]] = att_vector[i]
+    # vis_map[vis_map > 0.003] = 0.003
+    # print(f"a1 max:%f"%(np.max(vis_map))) 
+    return vis_map
+
+def shows_attention2(att_maps, pos = [28, 122]):
+    att_map1 = att_maps[0]
+    att_map2 = att_maps[1]
+    _, _, h, w = att_map1.shape
+    vis_map = np.zeros((h, w), dtype=np.float32)
+    att_vector = att_map2[0,:,pos[0], pos[1]]
+    for i in range(w):
+        map_step1 = shows_attention1(att_maps, pos=[pos[0], i])
+        vis_map += att_vector[i] * map_step1
+    for i in range(w,h+w-1):
+        new_i = i - w
+        if i >= pos[0]:
+            new_i = new_i + 1
+        map_step1 = shows_attention1(att_maps, pos=[new_i, pos[1]])
+        vis_map += att_vector[i] * map_step1
+    # print(f"a2 max:%f"%(np.max(vis_map)))
+    vis_map[vis_map > 0.0003] = 0.0003
+    return vis_map
+
+def make_image(vis_map, outputname):
+    import matplotlib.pyplot as plt
+    fig = plt.imshow(vis_map, cmap='hot', interpolation='bilinear')
+    fig.axes.get_xaxis().set_visible(False)
+    fig.axes.get_yaxis().set_visible(False)
+    plt.margins(0,0)
+    plt.savefig(outputname)
+
+def predict_whole(net, image, tile_size, recurrence, path):
+    N_, C_, H_, W_ = image.shape
+    image = jt.Var(image)
+    # prediction = net(image)
+    prediction, att_maps = net(image)
+    # draw picture of image
+    att_maps = [att.data for att in att_maps]
+    ilist = [50]
+    jlist = [50]
+    for i in ilist:
+        for j in jlist:
+            print(i, j)
+            vis_map1 = shows_attention1(att_maps, [i, j])
+            vis_map2 = shows_attention2(att_maps, [i, j])
+            make_image(vis_map1, path + "_" + str(i) + "_" + str(j) + "_" + "1" + ".png")
+            make_image(vis_map2, path + "_" + str(i) + "_" + str(j) + "_" + "2" + ".png")
+
+    if isinstance(prediction, list):
+        prediction = prediction[0]
+    prediction = nn.interpolate(prediction, size=(H_, W_), mode='bilinear', align_corners=True).numpy().transpose(0,2,3,1)
+    return prediction
+
+def predict_multiscale(net, image, tile_size, scales, classes, flip_evaluation, recurrence, path):
+    """
+    Predict an image by looking at it with different scales.
+        We choose the "predict_whole_img" for the image with less than the original input size,
+        for the input of larger size, we would choose the cropping method to ensure that GPU memory is enough.
+    """
+    image = image.data
+    N_, C_, H_, W_ = image.shape
+    full_probs = np.zeros((N_, H_, W_, classes))  
+    for scale in scales:
+        scale = float(scale)
+        scale_image = ndimage.zoom(image, (1.0, 1.0, scale, scale), order=1, prefilter=False)
+        scaled_probs = predict_whole(net, scale_image, tile_size, recurrence, path)
+        # scaled_probs = predict_sliding(net, scale_image, tile_size, classes, recurrence)
+        full_probs += scaled_probs
+    full_probs /= len(scales)
+    return full_probs
+
+def main():
+    parser = get_parser()
+
+    with Engine(custom_parser=parser) as engine:
+        args = parser.parse_args()
+
+        # cudnn.benchmark = True
+
+        h, w = map(int, args.input_size.split(','))
+        if args.whole:
+            input_size = (1024, 2048)
+        else:
+            input_size = (h, w)
+
+        seg_model = eval('networks.' + args.model + '.Seg_Model')(
+            num_classes=args.num_classes, recurrence=args.recurrence, need_draw=True
+        )
+        load_model(seg_model, args.restore_from)    
+        model = seg_model
+        model.eval()
+        if args.datasets == 'cityscapes':
+            dataset = CSDataSet(args.data_dir, args.data_list, crop_size=input_size, mean=IMG_MEAN, scale=False, mirror=False)
+        else:
+            dataset = ADEDataSet(args.data_dir, args.data_list, crop_size=input_size, 
+            mirror=False, mean=ADE_IMG_MEAN, std=ADE_IMG_STD,is_train=False, need_crop=False, imgSizes=600)
+
+        test_loader = engine.get_test_loader(dataset) 
+        palette = [128, 64, 128, 244, 35, 232, 70, 70, 70, 102, 102, 156, 190, 153, 153, 153, 153, 153, 250, 170, 30,
+           220, 220, 0, 107, 142, 35, 152, 251, 152, 70, 130, 180, 220, 20, 60, 255, 0, 0, 0, 0, 142, 0, 0, 70,
+           0, 60, 100, 0, 80, 100, 0, 0, 230, 119, 11, 32]
+        ade_palette = [i for k in ADE_PALETTE_RGB for i in k]     
+        save_path = os.path.join(os.path.dirname(args.Output), 'outputs_attention_' + args.datasets + '_' + args.model)
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)  
+
+        # index_list = list(map(int, args.picture_idx.split(',')))
+        # for idx in index_list:
+        dataloader = iter(test_loader)
+        for idx in range(args.picture_num):
+            image, label, size, name = next(dataloader)
+            size = size[0].numpy()
+            with jt.no_grad():
+                output = predict_multiscale(model, image, input_size, [1.0], args.num_classes, False, 0, path = str(save_path)+"/" +"attention"+name[0])
+
+            seg_pred = np.asarray(np.argmax(output, axis=3), dtype=np.uint8)
+            seg_gt = np.asarray(label.numpy()[:,:size[0],:size[1]], dtype=np.int)
+
+            for i in range(image.size(0)): 
+                output_im = PILImage.fromarray(seg_pred[i])
+                if args.datasets == 'cityscapes':
+                    output_im.putpalette(palette)
+                elif args.datasets == 'ade':
+                    output_im.putpalette(ade_palette)
+                output_im.save(os.path.join(save_path, name[i]+'.png'))
+
+if __name__ == "__main__":
+    main()

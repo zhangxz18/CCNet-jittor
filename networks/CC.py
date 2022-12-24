@@ -6,7 +6,7 @@ def INF(B,H,W):  # debug .cuda() .repeat()
      return -jt.diag(jt.array(float("inf")).repeat(H), 0).unsqueeze(0).repeat(B*W,1,1)
 
 class CC_module(Module):
-    def __init__(self,in_dim):
+    def __init__(self,in_dim, need_draw=False):
         super(CC_module, self).__init__()
         self.query_conv = nn.Conv(in_channels=in_dim, out_channels=in_dim//8, kernel_size=1) #[C', H, W] C'=C/8
         self.key_conv = nn.Conv(in_channels=in_dim, out_channels=in_dim//8, kernel_size=1)
@@ -14,6 +14,7 @@ class CC_module(Module):
         self.softmax = nn.Softmax(dim=3)
         self.INF = INF
         self.gamma = nn.Parameter(jt.zeros(1))
+        self.need_draw=need_draw
 
     def execute(self, x):  # TODO debug .view() .permute()
         m_batchsize, _, height, width = x.size()
@@ -37,7 +38,14 @@ class CC_module(Module):
         out_H = nn.bmm(proj_value_H, att_H.permute(0, 2, 1)).view(m_batchsize,width,-1,height).permute(0,2,3,1)  # batch matmul
         out_W = nn.bmm(proj_value_W, att_W.permute(0, 2, 1)).view(m_batchsize,height,-1,width).permute(0,2,1,3)
         #print(out_H.size(),out_W.size())
-        return self.gamma*(out_H + out_W) + x
+        if not self.need_draw:
+            return self.gamma*(out_H + out_W) + x
+        else:
+            print(f"height: %d, width: %d" % (height, width))
+            print(concate.shape)
+            # (batch_size, height+width, height, width)
+            att_map = concate.permute(0, 3, 1, 2)
+            return self.gamma*(out_H + out_W) + x, att_map
 
 
 if __name__ == '__main__':

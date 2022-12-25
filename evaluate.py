@@ -107,8 +107,8 @@ def predict_sliding(net, image, tile_size, classes, recurrence):
     overlap = 1/3
 
     stride = ceil(tile_size[0] * (1 - overlap))
-    tile_rows = int(ceil((image_size[2] - tile_size[0]) / stride) + 1)  # strided convolution formula
-    tile_cols = int(ceil((image_size[3] - tile_size[1]) / stride) + 1)
+    tile_rows = max(int(ceil((image_size[2] - tile_size[0]) / stride) + 1), 1)  # strided convolution formula
+    tile_cols = max(int(ceil((image_size[3] - tile_size[1]) / stride) + 1), 1)
     # print("Need %i x %i prediction tiles @ stride %i px" % (tile_cols, tile_rows, stride))
     full_probs = np.zeros((image_size[0], image_size[2], image_size[3], classes))
     count_predictions = np.zeros((1, image_size[2], image_size[3], classes))
@@ -168,11 +168,12 @@ def predict_multiscale(net, image, tile_size, scales, classes, flip_evaluation, 
         scale = float(scale)
         scale_image = ndimage.zoom(image, (1.0, 1.0, scale, scale), order=1, prefilter=False)
 
-        stride = ceil(tile_size[0] * (1 - 1/3))
-        if scale_image.shape[2] < stride and scale_image.shape[3] < stride:
-            scaled_probs = predict_whole(net, scale_image, tile_size, recurrence)
-        else:
-            scaled_probs = predict_sliding(net, scale_image, tile_size, classes, recurrence)
+        # stride = ceil(tile_size[0] * (1 - 1/3))
+        # if scale_image.shape[2] < stride and scale_image.shape[3] < stride:
+        #     scaled_probs = predict_whole(net, scale_image, tile_size, recurrence)
+        # else:
+        #     scaled_probs = predict_sliding(net, scale_image, tile_size, classes, recurrence)
+        scaled_probs = predict_sliding(net, scale_image, tile_size, classes, recurrence)
 
         if flip_evaluation == True:
             # flip_scaled_probs = predict_whole(net, scale_image[:,:,:,::-1].copy(), tile_size, recurrence)

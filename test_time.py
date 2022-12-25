@@ -1,6 +1,7 @@
 import time
 import jittor as jt
-from networks.ccnet import Seg_Model
+# from networks.ccnet import Seg_Model
+from networks.van import Seg_Model
 from utils.pyt_utils import load_model
 
 jt.flags.use_cuda = jt.has_cuda
@@ -8,7 +9,7 @@ jt.flags.use_cuda = jt.has_cuda
 # 模型参数
 num_classes = 19
 recurrence = 2
-restore_from = './snapshots/CS_scenes_40000ccnet.pkl'
+restore_from = './snapshots/CS_scenes_15000_van.pkl'
 
 warmup = 100
 rerun = 1000
